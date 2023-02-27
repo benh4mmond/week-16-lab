@@ -75,7 +75,7 @@ jobs:
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: BenHammondStack
-          template: infra/networking.yaml
+          template: infra/networking.yml
 
 
       # TODO: add deployment to cloudformation
