@@ -50,11 +50,34 @@ jobs:
           npm run lint
 
       # TODO: add supply chain scanning
+      - name: npm audit
+        working-directory: app
+        run: |
+          npm audit
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{matrix.language}}"
+
 
       # TODO: add unit testing
+      - name: List files in the repository
+        working-directory: app/lib
+        run: |
+          npm ci && npm test
 
       # TODO: add cloudformation linting
 
+
       # TODO: add deployment to cloudformation
+
 
       - run: echo "🍏 This job's status is ${{ job.status }}."
