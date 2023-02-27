@@ -55,19 +55,6 @@ jobs:
         run: |
           npm audit
 
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: ${{ matrix.language }}
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-        with:
-          category: "/language:${{matrix.language}}"
-
-
       # TODO: add unit testing
       - name: List files in the repository
         working-directory: app/lib
@@ -76,9 +63,25 @@ jobs:
 
 
       # TODO: add cloudformation linting
+      - name: Configure AWS credentials
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
 
+      - name: Deploy to AWS CloudFormation
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: BenHammondStack
+          template: infra/networking.yaml
 
       # TODO: add deployment to cloudformation
+      # - name: List files in the repository
+      #   working-directory: app/lib
+      #   run: |
+      #     ./deploy.sh
 
 
       - run: echo "🍏 This job's status is ${{ job.status }}."
