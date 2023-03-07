@@ -18,98 +18,116 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci-steps:
-    runs-on: ubuntu-latest
+  example_matrix:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        node: [12, 14, 16]
+        include:
+          - os: windows-latest
+            node: 16
+            npm: 6
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: TruffleHog secrets scanning
-        uses: trufflesecurity/trufflehog@main
+      - uses: actions/setup-node@v3
         with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          extra_args: --debug --only-verified
+          node-version: ${{ matrix.node }}
+      - if: ${{ matrix.npm }}
+        run: npm install -g npm@${{ matrix.npm }}
+      - run: npm --version
 
-      - name: setup nodejs
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-          registry-url: "https://registry.npmjs.org"
-          # cache: npm
+  # ci-steps:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
 
-      - name: install deps
-        working-directory: app
-        run: |
-          npm i
+  #     - name: TruffleHog secrets scanning
+  #       uses: trufflesecurity/trufflehog@main
+  #       with:
+  #         path: ./
+  #         base: ${{ github.event.repository.default_branch }}
+  #         head: HEAD
+  #         extra_args: --debug --only-verified
 
-      - name: run linting
-        working-directory: app
-        run: |
-          npm run lint
+  #     - name: setup nodejs
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18.x
+  #         registry-url: "https://registry.npmjs.org"
+  #         # cache: npm
 
-      # TODO: add supply chain scanning
-      - name: npm audit
-        working-directory: app
-        run: |
-          npm audit
+  #     - name: install deps
+  #       working-directory: app
+  #       run: |
+  #         npm i
 
-      # TODO: add unit testing
-      - name: List files in the repository
-        working-directory: app/lib
-        run: |
-          npm ci && npm test
+  #     - name: run linting
+  #       working-directory: app
+  #       run: |
+  #         npm run lint
 
+  #     # TODO: add supply chain scanning
+  #     - name: npm audit
+  #       working-directory: app
+  #       run: |
+  #         npm audit
 
-      # TODO: add cloudformation linting
-      - name: Configure AWS credentials
-        id: creds
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-
-      - name: Deploy to AWS CloudFormation
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: BenHammondStack
-          template: infra/networking.yml
+  #     # TODO: add unit testing
+  #     - name: List files in the repository
+  #       working-directory: app/lib
+  #       run: |
+  #         npm ci && npm test
 
 
-      # TODO: add deployment to cloudformation
-      # - name: List files in the repository
-      #   working-directory: app/lib
-      #   run: |
-      #     ./deploy.sh
+  #     # TODO: add cloudformation linting
+  #     - name: Configure AWS credentials
+  #       id: creds
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-west-2
+
+  #     - name: Deploy to AWS CloudFormation
+  #       uses: aws-actions/aws-cloudformation-github-deploy@v1
+  #       with:
+  #         name: BenHammondStack
+  #         template: infra/networking.yml
 
 
-      - run: echo "🍏 This job's status is ${{ job.status }}."
-
-  analyze:
-    needs: ci-steps
-    name: Analyze
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
+  #     # TODO: add deployment to cloudformation
+  #     # - name: List files in the repository
+  #     #   working-directory: app/lib
+  #     #   run: |
+  #     #     ./deploy.sh
 
 
+  #     - run: echo "🍏 This job's status is ${{ job.status }}."
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+  # analyze:
+  #   needs: ci-steps
+  #   name: Analyze
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
-      with:
-        category: "/language:${{matrix.language}}"
+
+
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@v3
+
+  #   # Initializes the CodeQL tools for scanning.
+  #   - name: Initialize CodeQL
+  #     uses: github/codeql-action/init@v2
+  #     with:
+  #       languages: ${{ matrix.language }}
+  #   - name: Autobuild
+  #     uses: github/codeql-action/autobuild@v2
+  #   - name: Perform CodeQL Analysis
+  #     uses: github/codeql-action/analyze@v2
+  #     with:
+  #       category: "/language:${{matrix.language}}"
